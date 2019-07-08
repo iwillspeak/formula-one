@@ -98,6 +98,12 @@ fn make_env() -> HashMap<String, Value> {
         }),
     );
     env.insert(
+        "begin".into(),
+        Value::Callable(|values| {
+            values.into_iter().last().unwrap_or(Value::Number(0))
+        })
+    );
+    env.insert(
         "+".into(),
         Value::Callable(|values| {
             let mut sum = 0;

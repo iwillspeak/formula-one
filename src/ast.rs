@@ -75,7 +75,7 @@ impl Token {
 /// Syntax expression enum
 ///
 /// Represnts one of the expression forms in the lanauge.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Expr {
     /// A direct reference to a variable symbol
     Symbol(Token, String),
