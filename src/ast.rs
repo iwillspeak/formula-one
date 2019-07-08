@@ -24,9 +24,6 @@
 
 use codespan::*;
 
-/// An invalid span used to stub out tokens without a source location
-pub const DUMMY_SPAN: Span<ByteIndex> = Span::new_unchecked(ByteIndex(0), ByteIndex(0));
-
 /// A single lexical token in the source text
 ///
 /// Each token represents a single logocal item in the source text. A
@@ -56,16 +53,6 @@ pub enum TokenKind {
 }
 
 impl Token {
-    /// Create a token with the given kind and a dummy span. Used for
-    /// creating a stubbed or synthetic token not directly parsed from
-    /// a source file.
-    pub fn new(kind: TokenKind) -> Self {
-        Token {
-            kind,
-            span: DUMMY_SPAN,
-        }
-    }
-
     /// Create a token with the given `kind` and `span`
     pub fn with_span(kind: TokenKind, span: Span<ByteIndex>) -> Self {
         Token { kind, span }
