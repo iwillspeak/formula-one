@@ -240,4 +240,42 @@ mod test {
             tokenise("1234")
         );
     }
+
+    #[test]
+    fn tokenise_symbols() {
+        assert_eq!(
+            vec![ast::Token::with_span(
+                ast::TokenKind::Symbol("hello/world".into()),
+                Span::new(ByteIndex(1), ByteIndex(12))
+            )],
+            tokenise("hello/world")
+        );
+        assert_eq!(
+            vec![
+                ast::Token::with_span(
+                    ast::TokenKind::Symbol("hello".into()),
+                    Span::new(ByteIndex(1), ByteIndex(6))
+                ),
+                ast::Token::with_span(
+                    ast::TokenKind::Symbol("world".into()),
+                    Span::new(ByteIndex(7), ByteIndex(12))
+                )
+            ],
+            tokenise("hello world")
+        );
+        assert_eq!(
+            vec![ast::Token::with_span(
+                ast::TokenKind::Symbol("hello.world".into()),
+                Span::new(ByteIndex(1), ByteIndex(12))
+            )],
+            tokenise("hello.world")
+        );
+        assert_eq!(
+            vec![ast::Token::with_span(
+                ast::TokenKind::Symbol("+".into()),
+                Span::new(ByteIndex(1), ByteIndex(2))
+            )],
+            tokenise("+")
+        )
+    }
 }
