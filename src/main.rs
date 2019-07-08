@@ -10,17 +10,20 @@ use std::io::prelude::*;
 /// Runs the REPL for the language
 fn main() {
     loop {
-        let expr = read();
-        println!("{:#?}", expr);
-        println!("] {:#?}", eval::eval(expr));
+        print(eval::eval(read()));
     }
 }
 
 /// Read the input string from source and parse it
 fn read() -> ast::Expr {
     let mut buff = String::new();
-    print!("> ");
+    print!("\u{1F3CE}  > ");
     std::io::stdout().flush().unwrap();
     std::io::stdin().read_line(&mut buff).unwrap();
     parse::parse(&buff)
+}
+
+/// Print out the result of an expression evaluation
+fn print(value: eval::Value) {
+    println!(" ~> {}", value);
 }

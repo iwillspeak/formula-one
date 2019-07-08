@@ -6,6 +6,7 @@
 
 use super::ast;
 
+use std::fmt;
 use std::collections::HashMap;
 
 /// Stores one of the varying value kinds that are used in
@@ -34,6 +35,15 @@ impl Value {
         match self {
             Value::Number(n) => n,
             other => panic!("can't use {:?}, it isn't a number", other),
+        }
+    }
+}
+
+impl fmt::Display for Value {
+    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Value::Number(n) => write!(out, "{}", n),
+            Value::Callable(c) => write!(out, "<callable {:x?}>", c),
         }
     }
 }
@@ -96,6 +106,13 @@ fn make_env() -> HashMap<String, Value> {
             }
             values.last().cloned().unwrap_or(Value::Number(0))
         }),
+    );
+    env.insert(
+        "exit".into(),
+        Value::Callable(|values| {
+            let status = values.into_iter().last().unwrap_or(Value::Number(0));
+            std::process::exit(status.into_num() as i32);
+        })
     );
     env.insert(
         "begin".into(),
