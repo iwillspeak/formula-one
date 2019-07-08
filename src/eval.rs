@@ -52,14 +52,9 @@ impl fmt::Display for Value {
 type Callable = fn(Vec<Value>) -> Value;
 
 /// Main evaluation function. This function accepts a parsed syntax
-/// tree and evaluates it into a single Value.
-pub fn eval(expr: ast::Expr) -> Value {
-    let mut env = make_env();
-    eval_with_env(expr, &mut env)
-}
-
-/// Evaluate with a given environment
-fn eval_with_env(expr: ast::Expr, env: &mut HashMap<String, Value>) -> Value {
+/// tree and evaluates it into a single Value using the given
+/// environment..
+pub fn eval_with_env(expr: ast::Expr, env: &mut HashMap<String, Value>) -> Value {
     use ast::Expr::*;
     match expr {
         Symbol(_, s) => env[&s],
@@ -95,7 +90,9 @@ fn eval_with_env(expr: ast::Expr, env: &mut HashMap<String, Value>) -> Value {
     }
 }
 
-fn make_env() -> HashMap<String, Value> {
+/// Create the global environment. This is the root environment and
+/// has the builtin operators and functions defined in it.
+pub fn make_global_env() -> HashMap<String, Value> {
     let mut env = HashMap::new();
 
     env.insert(

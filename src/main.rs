@@ -9,8 +9,9 @@ use std::io::prelude::*;
 ///
 /// Runs the REPL for the language
 fn main() {
+    let mut env = eval::make_global_env();
     loop {
-        print(eval::eval(read()));
+        print(eval::eval_with_env(read(), &mut env));
     }
 }
 
