@@ -38,7 +38,7 @@ pub const DUMMY_SPAN: Span<ByteIndex> = Span::new_unchecked(ByteIndex(0), ByteIn
 ///  * `trailing_trivia` - the trivia after this token to the end of line
 #[derive(Debug, PartialEq)]
 pub struct Token {
-    kind: TokenKind,
+    pub kind: TokenKind,
     span: Span<ByteIndex>,
 }
 
@@ -62,7 +62,29 @@ impl Token {
     pub fn new(kind: TokenKind) -> Self {
         Token {
             kind,
-            span: DUMMY_SPAN
+            span: DUMMY_SPAN,
         }
     }
+
+    /// Create a token with the given `kind` and `span`
+    pub fn with_span(kind: TokenKind, span: Span<ByteIndex>) -> Self {
+        Token { kind, span }
+    }
+}
+
+/// Syntax expression enum
+///
+/// Represnts one of the expression forms in the lanauge.
+#[derive(Debug)]
+pub enum Expr {
+    /// A direct reference to a variable symbol
+    Symbol(Token),
+    /// A numeric literal
+    Number(Token),
+    /// A conditional expression
+    If(Token, Token, Box<Expr>, Box<Expr>, Box<Expr>, Token),
+    /// A variable declaration
+    Deine(Token, Token, Box<Expr>, Token),
+    /// A funciton call expression
+    Call(Token, Token, Vec<Expr>, Token),
 }
