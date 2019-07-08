@@ -41,8 +41,11 @@ where
             match token.kind {
                 LeftBracket => self.parse_form(token),
                 RightBracket => panic!("unexpected token!"),
-                Number(_) => ast::Expr::Number(token),
-                Symbol(_) => ast::Expr::Symbol(token),
+                Number(n) => ast::Expr::Number(token, n),
+                Symbol(ref s) => {
+                    let sym = s.clone();
+                    ast::Expr::Symbol(token, sym)
+                }
             }
         } else {
             panic!("invalid expression.")
@@ -74,10 +77,11 @@ where
                     )
                 }
                 "define" => {
+                    let define_tok = self.0.next().unwrap();
                     let sym_tok = self.0.next().unwrap();
                     let value = self.parse_expr();
                     let close = self.0.next().unwrap();
-                    ast::Expr::Deine(open, sym_tok, Box::new(value), close)
+                    ast::Expr::Define(open, define_tok, sym_tok, Box::new(value), close)
                 }
                 _ => {
                     let sym_tok = self.0.next().unwrap();
@@ -125,7 +129,24 @@ fn tokenise(source: &str) -> Vec<ast::Token> {
                     '(' => Some(Lparen),
                     ')' => Some(Rparen),
                     '0'...'9' => Some(Number),
-                    'a'...'z' => Some(Symbol),
+                    'a'...'z'
+                    | 'A'...'Z'
+                    | '!'
+                    | '%'
+                    | '&'
+                    | '*'
+                    | '+'
+                    | '-'
+                    | '.'
+                    | '/'
+                    | ':'
+                    | '<'
+                    | '='
+                    | '>'
+                    | '?'
+                    | '@'
+                    | '$'
+                    | '^' => Some(Symbol),
                     c if c.is_whitespace() => Some(Whitespace),
                     _ => None,
                 },
@@ -135,7 +156,25 @@ fn tokenise(source: &str) -> Vec<ast::Token> {
                     _ => None,
                 },
                 Symbol => match c {
-                    'a'...'z' => Some(Symbol),
+                    'A'...'Z'
+                    | 'a'...'z'
+                    | '!'
+                    | '%'
+                    | '&'
+                    | '*'
+                    | '+'
+                    | '-'
+                    | '.'
+                    | '/'
+                    | ':'
+                    | '<'
+                    | '='
+                    | '>'
+                    | '?'
+                    | '@'
+                    | '$'
+                    | '^'
+                    | '0'...'9' => Some(Symbol),
                     _ => None,
                 },
                 Whitespace => {

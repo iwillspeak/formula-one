@@ -78,13 +78,13 @@ impl Token {
 #[derive(Debug)]
 pub enum Expr {
     /// A direct reference to a variable symbol
-    Symbol(Token),
+    Symbol(Token, String),
     /// A numeric literal
-    Number(Token),
+    Number(Token, i64),
     /// A conditional expression
     If(Token, Token, Box<Expr>, Box<Expr>, Box<Expr>, Token),
     /// A variable declaration
-    Deine(Token, Token, Box<Expr>, Token),
+    Define(Token, Token, Token, Box<Expr>, Token),
     /// A funciton call expression
     Call(Token, Token, Vec<Expr>, Token),
 }
