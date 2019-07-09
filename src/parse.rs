@@ -23,6 +23,8 @@ enum TokeniseState {
     Symbol,
     /// Unicode whitespace characters
     Whitespace,
+    /// Single line comment
+    Comment,
 }
 
 /// Tokenise a given string
@@ -68,6 +70,7 @@ fn tokenise(source: &str) -> Vec<ast::Token> {
                     | '@'
                     | '$'
                     | '^' => Some(Symbol),
+                    ';' => Some(Comment),
                     c if c.is_whitespace() => Some(Whitespace),
                     _ => None,
                 },
@@ -105,6 +108,13 @@ fn tokenise(source: &str) -> Vec<ast::Token> {
                         None
                     }
                 }
+                Comment => {
+                    if c == '\r' || c == '\n' {
+                        None
+                    } else {
+                        Some(Comment)
+                    }
+                }
             };
 
             // If we transitioned then accept the character by moving
@@ -134,7 +144,7 @@ fn tokenise(source: &str) -> Vec<ast::Token> {
             Number => ast::TokenKind::Number(token_str.parse().unwrap()),
             Symbol => ast::TokenKind::Symbol(token_str.into()),
             // Skip whitespace for now
-            Whitespace => continue,
+            Whitespace | Comment => continue,
         };
 
         result.push(ast::Token::with_span(
@@ -295,51 +305,106 @@ mod test {
     #[test]
     fn tokenise_brackets() {
         assert_eq!(
-            vec![
-                ast::Token::with_span(ast::TokenKind::LeftBracket, Span::new(ByteIndex(1), ByteIndex(2)))
-            ],
+            vec![ast::Token::with_span(
+                ast::TokenKind::LeftBracket,
+                Span::new(ByteIndex(1), ByteIndex(2))
+            )],
             tokenise("(")
         );
         assert_eq!(
-            vec![
-                ast::Token::with_span(ast::TokenKind::RightBracket, Span::new(ByteIndex(1), ByteIndex(2)))
-            ],
+            vec![ast::Token::with_span(
+                ast::TokenKind::RightBracket,
+                Span::new(ByteIndex(1), ByteIndex(2))
+            )],
             tokenise(")")
         );
         assert_eq!(
             vec![
-                ast::Token::with_span(ast::TokenKind::LeftBracket, Span::new(ByteIndex(1), ByteIndex(2))),
-                ast::Token::with_span(ast::TokenKind::RightBracket, Span::new(ByteIndex(2), ByteIndex(3)))
+                ast::Token::with_span(
+                    ast::TokenKind::LeftBracket,
+                    Span::new(ByteIndex(1), ByteIndex(2))
+                ),
+                ast::Token::with_span(
+                    ast::TokenKind::RightBracket,
+                    Span::new(ByteIndex(2), ByteIndex(3))
+                )
             ],
             tokenise("()")
         );
         assert_eq!(
             vec![
-                ast::Token::with_span(ast::TokenKind::LeftBracket, Span::new(ByteIndex(1), ByteIndex(2))),
-                ast::Token::with_span(ast::TokenKind::LeftBracket, Span::new(ByteIndex(2), ByteIndex(3))),
-                ast::Token::with_span(ast::TokenKind::LeftBracket, Span::new(ByteIndex(3), ByteIndex(4))),
-                ast::Token::with_span(ast::TokenKind::RightBracket, Span::new(ByteIndex(4), ByteIndex(5))),
-                ast::Token::with_span(ast::TokenKind::RightBracket, Span::new(ByteIndex(5), ByteIndex(6))),
-                ast::Token::with_span(ast::TokenKind::RightBracket, Span::new(ByteIndex(6), ByteIndex(7)))
+                ast::Token::with_span(
+                    ast::TokenKind::LeftBracket,
+                    Span::new(ByteIndex(1), ByteIndex(2))
+                ),
+                ast::Token::with_span(
+                    ast::TokenKind::LeftBracket,
+                    Span::new(ByteIndex(2), ByteIndex(3))
+                ),
+                ast::Token::with_span(
+                    ast::TokenKind::LeftBracket,
+                    Span::new(ByteIndex(3), ByteIndex(4))
+                ),
+                ast::Token::with_span(
+                    ast::TokenKind::RightBracket,
+                    Span::new(ByteIndex(4), ByteIndex(5))
+                ),
+                ast::Token::with_span(
+                    ast::TokenKind::RightBracket,
+                    Span::new(ByteIndex(5), ByteIndex(6))
+                ),
+                ast::Token::with_span(
+                    ast::TokenKind::RightBracket,
+                    Span::new(ByteIndex(6), ByteIndex(7))
+                )
             ],
             tokenise("((()))")
         );
     }
 
     #[test]
+    fn tokenise_comments() {
+        assert_eq!(
+            Vec::<ast::Token>::new(),
+            tokenise("; hello world")
+        );
+        assert_eq!(
+            Vec::<ast::Token>::new(),
+            tokenise("; hello world\n; another comment\r\n; windows eol")
+        );
+    }
+
+    #[test]
     fn parse_atoms() {
         assert_eq!(
-            ast::Expr::Number(ast::Token::with_span(ast::TokenKind::Number(64), Span::new(ByteIndex(1), ByteIndex(3))), 64),
+            ast::Expr::Number(
+                ast::Token::with_span(
+                    ast::TokenKind::Number(64),
+                    Span::new(ByteIndex(1), ByteIndex(3))
+                ),
+                64
+            ),
             parse("64")
         );
         assert_eq!(
-            ast::Expr::Number(ast::Token::with_span(ast::TokenKind::Number(12364), Span::new(ByteIndex(1), ByteIndex(6))), 12364),
+            ast::Expr::Number(
+                ast::Token::with_span(
+                    ast::TokenKind::Number(12364),
+                    Span::new(ByteIndex(1), ByteIndex(6))
+                ),
+                12364
+            ),
             parse("12364")
         );
         assert_eq!(
-            ast::Expr::Number(ast::Token::with_span(ast::TokenKind::Number(9223372036854775807), Span::new(ByteIndex(1), ByteIndex(20))), 9223372036854775807),
+            ast::Expr::Number(
+                ast::Token::with_span(
+                    ast::TokenKind::Number(9223372036854775807),
+                    Span::new(ByteIndex(1), ByteIndex(20))
+                ),
+                9223372036854775807
+            ),
             parse("9223372036854775807")
         );
     }
-    
 }
