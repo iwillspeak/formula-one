@@ -174,6 +174,33 @@ pub fn make_global_env() -> HashMap<String, Value> {
             })
         }),
     );
+    env.insert(
+        "/".into(),
+        Value::Callable(|values| {
+            if let Some((first, rest)) = values.split_first() {
+                let mut res = first.into_num();
+                Ok(if rest.len() == 0 {
+                    Value::Number(1 / res)
+                } else {
+                    for value in rest {
+                        res /= value.into_num();
+                    }
+                    Value::Number(res)
+                })
+            } else {
+                Err(EvalError("Wrong number of arguments: /, 0".into()))
+            }
+        })
+    );
+    env.insert(
+        "*".into(),
+        Value::Callable(|values| {
+            let res = values.iter().fold(1, |acc, v| {
+                acc * v.into_num()
+            });
+            Ok(Value::Number(res))
+        })
+    );
 
     env
 }
