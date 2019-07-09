@@ -25,6 +25,9 @@ fn read() -> ast::Expr {
 }
 
 /// Print out the result of an expression evaluation
-fn print(value: eval::Value) {
-    println!(" ~> {}", value);
+fn print(result: eval::EvalResult) {
+    match result {
+        Ok(value) => println!(" ~> {}", value),
+        Err(error) => println!(" !! {}", error),
+    }
 }

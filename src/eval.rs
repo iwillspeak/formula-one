@@ -48,45 +48,62 @@ impl fmt::Display for Value {
     }
 }
 
+/// Evaluation error values
+///
+/// This contains the different kinds of errors that can occur when
+/// evaluating a value.
+#[derive(Debug, PartialEq)]
+pub struct EvalError(String);
+
+impl fmt::Display for EvalError {
+    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+        write!(out, "error: {}", self.0)
+    }
+}
+
+pub type EvalResult = Result<Value, EvalError>;
+
 /// The type of a funtion call in our LISP
 type Callable = fn(Vec<Value>) -> Value;
 
 /// Main evaluation function. This function accepts a parsed syntax
 /// tree and evaluates it into a single Value using the given
 /// environment..
-pub fn eval_with_env(expr: ast::Expr, env: &mut HashMap<String, Value>) -> Value {
+pub fn eval_with_env(expr: ast::Expr, env: &mut HashMap<String, Value>) -> Result<Value, EvalError> {
     use ast::Expr::*;
-    match expr {
+    Ok(match expr {
         Symbol(_, s) => env[&s],
         Number(_, n) => Value::Number(n),
         If(_, _, cond, then, elz, _) => {
-            if eval_with_env(*cond, env).is_truthy() {
-                eval_with_env(*then, env)
+            if eval_with_env(*cond, env)?.is_truthy() {
+                eval_with_env(*then, env)?
             } else {
-                eval_with_env(*elz, env)
+                eval_with_env(*elz, env)?
             }
         }
         Define(_, _, sym, value, _) => {
-            let value = eval_with_env(*value, env);
-            let sym = match sym.kind {
-                ast::TokenKind::Symbol(s) => s,
-                other => panic!("can't define '{:?}', it isn't a symbol", other),
-            };
+            let value = eval_with_env(*value, env)?;
+            let sym = to_sym(sym)?;
             env.insert(sym, value.clone());
             value
         }
         Call(_, sym, args, _) => {
-            let sym = match sym.kind {
-                ast::TokenKind::Symbol(s) => s,
-                other => panic!("can't call '{:?}', it isn't a symbol", other),
-            };
+            let sym = to_sym(sym)?;
             match env.get(&sym) {
                 Some(Value::Callable(c)) => {
-                    c(args.into_iter().map(|a| eval_with_env(a, env)).collect())
+                    c(args.into_iter().map(|a| eval_with_env(a, env)).collect::<Result<Vec<_>, _>>()?)
                 }
-                _ => panic!("{:?} is not callable", sym),
+                _ => return Err(EvalError(format!("eval: Invalid function {}", sym))),
             }
         }
+    })
+}
+
+/// Convert a token to a symbol.
+fn to_sym(token: ast::Token) -> Result<String, EvalError> {
+    match token.kind {
+        ast::TokenKind::Symbol(s) => Ok(s),
+        other => Err(EvalError(format!("Token '{:?}' is not symbol", other))),
     }
 }
 
