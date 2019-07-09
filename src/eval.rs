@@ -18,6 +18,8 @@ pub enum Value {
     Number(i64),
     /// A callable value
     Callable(Callable),
+    /// The empty list and an invalid or placeholder value
+    Nil
 }
 
 impl Value {
@@ -44,6 +46,7 @@ impl fmt::Display for Value {
         match *self {
             Value::Number(n) => write!(out, "{}", n),
             Value::Callable(c) => write!(out, "<callable {:x?}>", c),
+            Value::Nil => write!(out, "nil"),
         }
     }
 }
@@ -64,7 +67,7 @@ impl fmt::Display for EvalError {
 pub type EvalResult = Result<Value, EvalError>;
 
 /// The type of a funtion call in our LISP
-type Callable = fn(Vec<Value>) -> Value;
+type Callable = fn(Vec<Value>) -> Result<Value, EvalError>;
 
 /// Main evaluation function. This function accepts a parsed syntax
 /// tree and evaluates it into a single Value using the given
@@ -91,7 +94,7 @@ pub fn eval_with_env(expr: ast::Expr, env: &mut HashMap<String, Value>) -> Resul
             let sym = to_sym(sym)?;
             match env.get(&sym) {
                 Some(Value::Callable(c)) => {
-                    c(args.into_iter().map(|a| eval_with_env(a, env)).collect::<Result<Vec<_>, _>>()?)
+                    c(args.into_iter().map(|a| eval_with_env(a, env)).collect::<Result<Vec<_>, _>>()?)?
                 }
                 _ => return Err(EvalError(format!("eval: Invalid function {}", sym))),
             }
@@ -107,6 +110,11 @@ fn to_sym(token: ast::Token) -> Result<String, EvalError> {
     }
 }
 
+/// Get the last value or `Nil` if there are none
+fn last_or_nil(values: Vec<Value>) -> Value {
+    values.last().cloned().unwrap_or(Value::Nil)
+}
+
 /// Create the global environment. This is the root environment and
 /// has the builtin operators and functions defined in it.
 pub fn make_global_env() -> HashMap<String, Value> {
@@ -118,20 +126,20 @@ pub fn make_global_env() -> HashMap<String, Value> {
             for value in values.iter() {
                 println!("{:?}", value);
             }
-            values.last().cloned().unwrap_or(Value::Number(0))
+            Ok(last_or_nil(values))
         }),
     );
     env.insert(
         "exit".into(),
         Value::Callable(|values| {
             let status = values.into_iter().last().unwrap_or(Value::Number(0));
-            std::process::exit(status.into_num() as i32);
+            std::process::exit(status.into_num() as i32)
         })
     );
     env.insert(
         "begin".into(),
         Value::Callable(|values| {
-            values.into_iter().last().unwrap_or(Value::Number(0))
+            Ok(last_or_nil(values))
         })
     );
     env.insert(
@@ -141,13 +149,13 @@ pub fn make_global_env() -> HashMap<String, Value> {
             for value in values.iter() {
                 sum += value.into_num();
             }
-            Value::Number(sum)
+            Ok(Value::Number(sum))
         }),
     );
     env.insert(
         "-".into(),
         Value::Callable(|values| {
-            if let Some((first, rest)) = values.split_first() {
+            Ok(if let Some((first, rest)) = values.split_first() {
                 let mut sum = first.into_num();
                 if rest.len() == 0 {
                     Value::Number(-sum)
@@ -158,8 +166,9 @@ pub fn make_global_env() -> HashMap<String, Value> {
                     Value::Number(sum)
                 }
             } else {
-                panic!("No arguments to '-'")
-            }
+                // (-) ~> 0 ; apparently
+                Value::Number(0)
+            })
         }),
     );
 
