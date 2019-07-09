@@ -364,10 +364,7 @@ mod test {
 
     #[test]
     fn tokenise_comments() {
-        assert_eq!(
-            Vec::<ast::Token>::new(),
-            tokenise("; hello world")
-        );
+        assert_eq!(Vec::<ast::Token>::new(), tokenise("; hello world"));
         assert_eq!(
             Vec::<ast::Token>::new(),
             tokenise("; hello world\n; another comment\r\n; windows eol")

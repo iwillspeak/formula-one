@@ -6,8 +6,8 @@
 
 use super::ast;
 
-use std::fmt;
 use std::collections::HashMap;
+use std::fmt;
 
 /// Stores one of the varying value kinds that are used in
 /// evaluation. This can be the result of evaluating an expression or
@@ -19,7 +19,7 @@ pub enum Value {
     /// A callable value
     Callable(Callable),
     /// The empty list and an invalid or placeholder value
-    Nil
+    Nil,
 }
 
 impl Value {
@@ -72,34 +72,39 @@ type Callable = fn(Vec<Value>) -> Result<Value, EvalError>;
 /// Main evaluation function. This function accepts a parsed syntax
 /// tree and evaluates it into a single Value using the given
 /// environment..
-pub fn eval_with_env(expr: ast::Expr, env: &mut HashMap<String, Value>) -> Result<Value, EvalError> {
+pub fn eval_with_env(
+    expr: ast::Expr,
+    env: &mut HashMap<String, Value>,
+) -> Result<Value, EvalError> {
     use ast::Expr::*;
-    Ok(match expr {
-        Symbol(_, s) => env[&s],
-        Number(_, n) => Value::Number(n),
-        If(_, _, cond, then, elz, _) => {
-            if eval_with_env(*cond, env)?.is_truthy() {
-                eval_with_env(*then, env)?
-            } else {
-                eval_with_env(*elz, env)?
-            }
-        }
+    match expr {
+        Symbol(_, s) => env
+            .get(&s)
+            .cloned()
+            .ok_or_else(|| EvalError(format!("eval: Undefined symbol {}", s))),
+        Number(_, n) => Ok(Value::Number(n)),
+        If(_, _, cond, then, elz, _) => Ok(if eval_with_env(*cond, env)?.is_truthy() {
+            eval_with_env(*then, env)?
+        } else {
+            eval_with_env(*elz, env)?
+        }),
         Define(_, _, sym, value, _) => {
             let value = eval_with_env(*value, env)?;
             let sym = to_sym(sym)?;
             env.insert(sym, value.clone());
-            value
+            Ok(value)
         }
         Call(_, sym, args, _) => {
             let sym = to_sym(sym)?;
             match env.get(&sym) {
-                Some(Value::Callable(c)) => {
-                    c(args.into_iter().map(|a| eval_with_env(a, env)).collect::<Result<Vec<_>, _>>()?)?
-                }
-                _ => return Err(EvalError(format!("eval: Invalid function {}", sym))),
+                Some(Value::Callable(c)) => c(args
+                    .into_iter()
+                    .map(|a| eval_with_env(a, env))
+                    .collect::<Result<Vec<_>, _>>()?),
+                _ => Err(EvalError(format!("eval: Invalid function {}", sym))),
             }
         }
-    })
+    }
 }
 
 /// Convert a token to a symbol.
@@ -134,13 +139,11 @@ pub fn make_global_env() -> HashMap<String, Value> {
         Value::Callable(|values| {
             let status = values.into_iter().last().unwrap_or(Value::Number(0));
             std::process::exit(status.into_num() as i32)
-        })
+        }),
     );
     env.insert(
         "begin".into(),
-        Value::Callable(|values| {
-            Ok(last_or_nil(values))
-        })
+        Value::Callable(|values| Ok(last_or_nil(values))),
     );
     env.insert(
         "+".into(),
