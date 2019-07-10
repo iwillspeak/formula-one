@@ -1,0 +1,4 @@
+(begin
+	(define foo 1007)
+	(define bar 330)
+	(print (+ foo bar))) ; ~> prints 1337

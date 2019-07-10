@@ -64,18 +64,28 @@ impl fmt::Display for EvalError {
     }
 }
 
+/// Evaluation Result Type
+///
+/// Used as the return value of calls to `eval`. Returns a `Value` on
+/// success or an `EvalError` on failure.
 pub type EvalResult = Result<Value, EvalError>;
 
 /// The type of a funtion call in our LISP
 type Callable = fn(Vec<Value>) -> Result<Value, EvalError>;
 
+/// Simple Evaluation
+///
+/// Convenience function to evaluate a given expression in a new
+/// environment. This is used by the main driver when evaluating
+/// expressions from a function.
+pub fn eval(expr: ast::Expr) -> EvalResult {
+    eval_with_env(expr, &mut make_global_env())
+}
+
 /// Main evaluation function. This function accepts a parsed syntax
 /// tree and evaluates it into a single Value using the given
 /// environment..
-pub fn eval_with_env(
-    expr: ast::Expr,
-    env: &mut HashMap<String, Value>,
-) -> Result<Value, EvalError> {
+pub fn eval_with_env(expr: ast::Expr, env: &mut HashMap<String, Value>) -> EvalResult {
     use ast::Expr::*;
     match expr {
         Symbol(_, s) => env
@@ -129,7 +139,7 @@ pub fn make_global_env() -> HashMap<String, Value> {
         "print".into(),
         Value::Callable(|values| {
             for value in values.iter() {
-                println!("{:?}", value);
+                println!("{}", value);
             }
             Ok(last_or_nil(values))
         }),
@@ -190,16 +200,14 @@ pub fn make_global_env() -> HashMap<String, Value> {
             } else {
                 Err(EvalError("Wrong number of arguments: /, 0".into()))
             }
-        })
+        }),
     );
     env.insert(
         "*".into(),
         Value::Callable(|values| {
-            let res = values.iter().fold(1, |acc, v| {
-                acc * v.into_num()
-            });
+            let res = values.iter().fold(1, |acc, v| acc * v.into_num());
             Ok(Value::Number(res))
-        })
+        }),
     );
 
     env
