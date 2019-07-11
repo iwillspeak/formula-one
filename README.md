@@ -7,6 +7,12 @@ Formula One is an experiment in ways to ergonomically build syntax trees and tra
  ~> 1337
 ```
 
+## Blog Post
+
+The early development of this language is discussed on my blog in [Lisp in Two Days with Rust][blogpost]
+
+ [blogpost]: https://willspeak.me/2019/07/10/lisp-in-two-days-with-rust.html
+ 
 ## Features
 
 The language is a small subset of the LISP described in <https://norvig.com/lispy.html>. Notably it supports the following special forms:
