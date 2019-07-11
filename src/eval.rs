@@ -71,7 +71,7 @@ impl fmt::Display for EvalError {
 pub type EvalResult = Result<Value, EvalError>;
 
 /// The type of a funtion call in our LISP
-type Callable = fn(Vec<Value>) -> Result<Value, EvalError>;
+type Callable = fn(Vec<Value>) -> EvalResult;
 
 /// Simple Evaluation
 ///
@@ -157,26 +157,21 @@ pub fn make_global_env() -> HashMap<String, Value> {
     );
     env.insert(
         "+".into(),
-        Value::Callable(|values| {
-            let mut sum = 0;
-            for value in values.iter() {
-                sum += value.into_num();
-            }
-            Ok(Value::Number(sum))
-        }),
+        Value::Callable(|values| Ok(Value::Number(values.iter().map(|i| i.into_num()).sum()))),
+    );
+    env.insert(
+        "*".into(),
+        Value::Callable(|values| Ok(Value::Number(values.iter().map(|i| i.into_num()).product()))),
     );
     env.insert(
         "-".into(),
         Value::Callable(|values| {
             Ok(if let Some((first, rest)) = values.split_first() {
-                let mut sum = first.into_num();
+                let first = first.into_num();
                 if rest.len() == 0 {
-                    Value::Number(-sum)
+                    Value::Number(-first)
                 } else {
-                    for value in rest {
-                        sum -= value.into_num();
-                    }
-                    Value::Number(sum)
+                    Value::Number(rest.iter().fold(first, |acc, n| acc - n.into_num()))
                 }
             } else {
                 // (-) ~> 0 ; apparently
@@ -188,25 +183,15 @@ pub fn make_global_env() -> HashMap<String, Value> {
         "/".into(),
         Value::Callable(|values| {
             if let Some((first, rest)) = values.split_first() {
-                let mut res = first.into_num();
+                let first = first.into_num();
                 Ok(if rest.len() == 0 {
-                    Value::Number(1 / res)
+                    Value::Number(1 / first)
                 } else {
-                    for value in rest {
-                        res /= value.into_num();
-                    }
-                    Value::Number(res)
+                    Value::Number(rest.iter().fold(first, |acc, n| acc / n.into_num()))
                 })
             } else {
                 Err(EvalError("Wrong number of arguments: /, 0".into()))
             }
-        }),
-    );
-    env.insert(
-        "*".into(),
-        Value::Callable(|values| {
-            let res = values.iter().fold(1, |acc, v| acc * v.into_num());
-            Ok(Value::Number(res))
         }),
     );
 
