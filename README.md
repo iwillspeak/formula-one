@@ -21,7 +21,7 @@ The language is a small subset of the LISP described in <https://norvig.com/lisp
  * `(define <sym> <expr>)` binding a value to a symbol
  * `(<sym> <args>...)` for calling a named function `<sym>`
 
-All evaluation takes place in a single global environment. The language does not support user-defined functions with `labda` or the nested environments that they would entail. Quoting of values with `'` or `quote` is also not supported. There is no comment support yet either.
+All evaluation takes place in a single global environment. The language does not support user-defined functions with `labda` or the nested environments that they would entail. Quoting of values with `'` or `quote` is also not supported. The parser recognises comments and whitespace but is yet to bind them to primary tokens as trivia.
 
 ## 🐉 Here be Dragons 🐉
 
