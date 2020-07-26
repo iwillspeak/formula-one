@@ -51,9 +51,9 @@ fn tokenise(source: &str) -> Vec<ast::Token> {
                 Start => match c {
                     '(' => Some(Lparen),
                     ')' => Some(Rparen),
-                    '0'...'9' => Some(Number),
-                    'a'...'z'
-                    | 'A'...'Z'
+                    '0'..='9' => Some(Number),
+                    'a'..='z'
+                    | 'A'..='Z'
                     | '!'
                     | '%'
                     | '&'
@@ -76,12 +76,12 @@ fn tokenise(source: &str) -> Vec<ast::Token> {
                 },
                 Lparen | Rparen => None,
                 Number => match c {
-                    '0'...'9' => Some(Number),
+                    '0'..='9' => Some(Number),
                     _ => None,
                 },
                 Symbol => match c {
-                    'A'...'Z'
-                    | 'a'...'z'
+                    'A'..='Z'
+                    | 'a'..='z'
                     | '!'
                     | '%'
                     | '&'
@@ -98,7 +98,7 @@ fn tokenise(source: &str) -> Vec<ast::Token> {
                     | '@'
                     | '$'
                     | '^'
-                    | '0'...'9' => Some(Symbol),
+                    | '0'..='9' => Some(Symbol),
                     _ => None,
                 },
                 Whitespace => {
