@@ -36,7 +36,7 @@ use codespan::*;
 #[derive(Debug, PartialEq)]
 pub struct Token {
     pub kind: TokenKind,
-    span: Span<ByteIndex>,
+    span: Span,
 }
 
 /// Datum for the four kinds of token
@@ -54,7 +54,7 @@ pub enum TokenKind {
 
 impl Token {
     /// Create a token with the given `kind` and `span`
-    pub fn with_span(kind: TokenKind, span: Span<ByteIndex>) -> Self {
+    pub fn with_span(kind: TokenKind, span: Span) -> Self {
         Token { kind, span }
     }
 }

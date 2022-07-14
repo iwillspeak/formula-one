@@ -43,7 +43,7 @@ fn tokenise(source: &str) -> Vec<ast::Token> {
 
         // Search through the remaining characters until the state
         // machine can make no further transitions.
-        for c in source[start..].chars() {
+        for c in source[start as usize..].chars() {
             // This two-level match encodes the state transitions for
             // the automaton. First we dispatch based on the current
             // state, then the character we are looking at.
@@ -128,7 +128,7 @@ fn tokenise(source: &str) -> Vec<ast::Token> {
         }
 
         let token_str = &source[start..end];
-        let span = Span::new(start, end);
+        let span = Span::new((start as u32) + 1, (end as u32) + 1);
 
         start = end;
 
@@ -147,10 +147,7 @@ fn tokenise(source: &str) -> Vec<ast::Token> {
             Whitespace | Comment => continue,
         };
 
-        result.push(ast::Token::with_span(
-            kind,
-            span.map(|s| ByteIndex(s as u32 + 1)),
-        ));
+        result.push(ast::Token::with_span(kind, span));
     }
 
     result

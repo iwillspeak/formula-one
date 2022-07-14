@@ -1,6 +1,6 @@
 [package]
 authors = ["Will Speak <lithiumflame@gmail.com>"]
-edition = "2018"
+edition = "2021"
 name = "formula-one"
 version = "0.1.0"
 
